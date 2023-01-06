@@ -1,0 +1,169 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Network Simulation</title>
+    <style>
+        #canvas {
+            border: 1px solid black;
+        }
+
+        .component {
+            width: 100px;
+            height: 50px;
+            border: 1px solid black;
+            background-color: lightgray;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Network Simulation</h1>
+    <div id="toolbox">
+        <button onclick="newSwitch()">Switch hinzufügen!</button>
+        <!-- <button onclick="test('Router')">Router hinzufügen!</button> -->
+        <button onclick="newRechner()">Rechner hinzufügen!</button>
+        <!-- <button onclick="testLocalStorage()">Test Local Storage</button> -->
+    </div>
+    <div id="container"></div>
+
+    <script src="https://unpkg.com/konva@8/konva.min.js"></script>
+    <script>
+        function addDeviceToCanvas(device) {
+            var group = new Konva.Group({
+                x: device.x,
+                y: device.y,
+                draggable: true,
+                id: device.id
+            });
+            // Hier muss dann das entsprechende Bild rein
+            var rect = new Konva.Rect({
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 50,
+                stroke: 'black',
+                strokeWidth: 1,
+                fill: 'lightgray'
+            });
+            const text = new Konva.Text({
+                text: device.settings.name,
+                height: rect.height(),
+                verticalAlign: 'middle',
+                align: "center",
+            });
+            group.add(rect);
+            group.add(text);
+
+            group.on('click', function (evt) {
+                alert('clicked on ' + device.id);
+                console.log(evt.target.parent.attrs.id)
+            });
+
+            layer.add(group);
+        }
+
+        function createStandardDatabase() {
+            var object = { 'devices': [], 'connections': [] };
+            localStorage.setItem('database', JSON.stringify(object));
+        }
+
+        function getDatabase() {
+            var database = localStorage.getItem('database');
+            return JSON.parse(database);
+        }
+
+        function newRechner() {
+            var rechner = { 'type': 'Rechner', 'id': '', 'x': 0, 'y': 0, 'settings': { 'name': 'Rechner', 'ip': '192.168.1.10', 'mac': '00:00:00:00:00:00', 'mask': '255.255.255.0', 'gateway': '', 'dns': '', 'ip-as-name': false } };
+            rechner = addDeviceToDatabase(rechner);
+            addDeviceToCanvas(rechner);
+
+        }
+
+        function newSwitch() {
+            var switchDevice = {
+                'type': 'Switch', 'id': '', 'x': 0, 'y': 0, 'settings': { 'name': 'Switch' }
+            };
+            switchDevice = addDeviceToDatabase(switchDevice);
+            addDeviceToCanvas(switchDevice);
+        }
+
+
+        function getAmountOfDevices(deviceType) {
+            var database = getDatabase();
+            var counter = 0;
+            for (var i = 0; i < database.devices.length; i++) {
+                if (database.devices[i].type == deviceType) {
+                    counter++;
+                }
+            }
+            return counter;
+        }
+
+        function addDeviceToDatabase(device) {
+            var database = getDatabase();
+            var amountOfDevices = getAmountOfDevices(device.type);
+            device.id = device.type + amountOfDevices;
+            database.devices.push(device);
+            localStorage.setItem('database', JSON.stringify(database));
+            return device;
+        }
+
+        // Get references to the canvas and the toolbox
+        var canvas = document.getElementById("canvas");
+        var toolbox = document.getElementById("toolbox");
+
+        // Create a Konva stage and layer
+        var stage = new Konva.Stage({
+            container: 'container',
+            width: window.innerWidth,
+            height: window.innerHeight
+        });
+        var layer = new Konva.Layer();
+        stage.add(layer);
+
+        // Make the toolbox items draggable
+        var components = toolbox.querySelectorAll(".component");
+        for (var i = 0; i < components.length; i++) {
+            var component = components[i];
+            component.addEventListener("mousedown", function (event) {
+                // Create a Konva.Group to hold the component and its connectors
+                var group = new Konva.Group({
+                    x: event.clientX,
+                    y: event.clientY,
+                    draggable: true
+                });
+
+                // Create a Konva.Rect to represent the component
+                var rect = new Konva.Rect({
+                    x: 0,
+                    y: 0,
+                    width: 100,
+                    height: 50,
+                    stroke: 'black',
+                    strokeWidth: 1,
+                    fill: 'lightgray'
+                });
+                group.add(rect);
+
+                // Add the group to the layer
+                layer.add(group);
+
+                // Start dragging the group
+                group.startDrag();
+
+                // Stop dragging when the mouse is released
+                window.addEventListener("mouseup", function (event) {
+                    group.stopDrag();
+                });
+
+                // Prevent default behavior of mousedown event
+                // (prevents text selection)
+                event.preventDefault();
+            });
+        }
+    </script>
+</body>
+
+</html>
